@@ -97,7 +97,7 @@ let example_src_2 : string = "\\ bool . if bool then false else true end"
   *)
 let tm_ast_src : string = {| ( \ x. if (x<0) then (0-x) else x end ) ( if true then false else true end ) |}
 
-let _ = Parse.tm_nd tm_ast_src
+(* let _ = Parse.tm_nd tm_ast_src *)
 
 (* Z 组合子, 请保证绑定变量的命名一致 (2 分)
   根据下列字符串, 写出对应的抽象语法树:
@@ -121,7 +121,7 @@ let tm_src_ast : Named.tm = Named.(
   )
 )
 
-let _ = Stringify.tm_nd Term.tm_src_ast
+(* let _ = Stringify.tm_nd Term.tm_src_ast *)
 
 (*
   至此, 你应该对 Named.tm 这一类型充分熟悉, 至于 Named 这一称呼,
