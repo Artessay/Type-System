@@ -4,8 +4,8 @@
 
 (generate_opam_files true)
 
-(authors "PPL2022 Your Name")
-(maintainers "Your Name")
+(authors "PPL2022 Rihong Qiu")
+(maintainers "Rihong Qiu")
 
 (license LICENSE)
 

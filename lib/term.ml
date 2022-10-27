@@ -95,13 +95,33 @@ let example_src_2 : string = "\\ bool . if bool then false else true end"
   App(Lam("x", If( Lt(Var("x"), Int(0)), Sub(Int(0), Var("x")), Var("x")))
   , If(Bool(true), Bool(false), Bool(true)))
   *)
-let tm_ast_src : string = {| Todo |}
+let tm_ast_src : string = {| ( \ x. if (x<0) then (0-x) else x end ) ( if true then false else true end ) |}
+
+let _ = Parse.tm_nd tm_ast_src
 
 (* Z 组合子, 请保证绑定变量的命名一致 (2 分)
   根据下列字符串, 写出对应的抽象语法树:
   {| \ f. (\ x. f(\ y. x x y)) (\ x. f(\ y. x x y)) |}
  *)
-let tm_src_ast : Named.tm = Named.Var "Todo"
+let tm_src_ast : Named.tm = Named.(
+  Lam("f", 
+    App(
+      Lam("x", 
+        App(
+          Var("f") , 
+          Lam("y", App(App(Var("x") , Var("x")) , Var("y")))
+        )
+      ) , 
+      Lam("x", 
+        App(
+          Var("f") , 
+          Lam("y", App(App(Var("x") , Var("x")) , Var("y"))))
+      )
+    )
+  )
+)
+
+let _ = Stringify.tm_nd Term.tm_src_ast
 
 (*
   至此, 你应该对 Named.tm 这一类型充分熟悉, 至于 Named 这一称呼,
