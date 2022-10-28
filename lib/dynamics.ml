@@ -105,10 +105,58 @@ let example_src_seq_reason : string =
 let src_seq_fail : string list = 
   [ {| (\ f. f true)((\ x. if x then \y. y+1+1 else \y.y end)
     ((\ x. if x then false else true end)(3+1<2))) |}
+  ; {|(\ f. f true)
+      (
+        (\ x. if x then \y. y+1+1 else \y.y end)
+        (
+          (\ x. if x then false else true end)
+          ( 4 <2)
+        )
+      )
+  |}
+  ; {|(\ f. f true)
+      (
+        (\ x. if x then \y. y+1+1 else \y.y end)
+        (
+          (\ x. if x then false else true end)
+          false
+        )
+      )
+  |}
+  ; {|(\ f. f true)
+      (
+        (\ x. if x then \y. y+1+1 else \y.y end)
+        (if false then false else true end)
+      )
+  |}
+  ; {|(\ f. f true)
+      (
+        (\ x. if x then \y. y+1+1 else \y.y end)
+        (                         true    )
+      )
+  |}
+  ; {|(\ f. f true)
+      (if true then \y. y+1+1 else \y.y end)
+  |}
+  ; {|(\ f. f true)
+      \y. y+1+1 
+  |}
+  ; {| (\y. y+1+1) true |}
+  ; {| true+1+1 |}
+  (* ; {| (\ f. f true)((\ x. if x then \y. y+1+1 else \y.y end)
+    ((\ x. if x then false else true end)( 4 <2))) |}
   ; {| (\ f. f true)((\ x. if x then \y. y+1+1 else \y.y end)
-  ((\ x. if x then false else true end)(3+1<2))) |}
+    ((\ x. if x then false else true end)( false ))) |}
+  ; {| (\ f. f true)((\ x. if x then \y. y+1+1 else \y.y end)
+    (if false then false else true end)) |}
+  ; {| (\ f. f true)((\ x. if x then \y. y+1+1 else \y.y end)
+    (                         true    )) |}
+  ; {| (\ f. f true)( if true then \y. y+1+1 else \y.y end) |}
+  ; {| (\ f. f true)(              \y. y+1+1              ) |}
+  ; {| (\y. y+1+1) true |}
+  ; {| true + 1 + 1 |} *)
   ]
-let src_seq_reason : string = {| Todo |}
+let src_seq_reason : string = {| true + 1 + 1 |}
 
 (*
   接下来就是小步求值语义 t --> t', 这也是本文件最重要的内容(28 分).
@@ -176,23 +224,87 @@ let rec step (tm:tm) : (status * tm) = match tm with
       ------------------------------------ Add-3
             t1+t2 --> Int(n1+n2)
      *)
-    raise Todo.Dynamics
+    let is_val_1 = value t1 in
+    let is_val_2 = value t2 in
+    if is_val_1 && is_val_2 then (* App-3 *)
+      match (t1, t2) with 
+      | (Int(t1'), Int(t2')) -> (OK, Int(t1' + t2')) 
+      | _ -> (Error, tm)
+    else if is_val_1 then (* App-2 *)
+      match step t2 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t2') -> (OK, Add(t1, t2'))
+    else (* App-1 *)
+      match step t1 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t1') -> (OK, Add(t1', t2))
   )
   | Sub(t1, t2) -> (
     (* 
       减法与加法有类似的规则, 还记得 作业-学点 OCaml 吗？
       请你模仿 Add 的规则写出 Sub 的规则, 并同样实现:
 
+            t1    --> t1'
+      ---------------------- Sub-1
+            t1-t2 --> t1'-t2
 
+      t1 val   t2 -->    t2'
+      ---------------------- Sub-2
+            t1+t2 --> t1-t2'
+
+      t1 val t2 val t1=Int(n1) t2=Int(n2)
+      ------------------------------------ Sub-3
+            t1-t2 --> Int(n1-n2)
      *)
-    raise Todo.Dynamics
+    let is_val_1 = value t1 in
+    let is_val_2 = value t2 in
+    if is_val_1 && is_val_2 then (* App-3 *)
+      match (t1, t2) with 
+      | (Int(t1'), Int(t2')) -> (OK, Int(t1' - t2')) 
+      | _ -> (Error, tm)
+    else if is_val_1 then (* App-2 *)
+      match step t2 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t2') -> (OK, Sub(t1, t2'))
+    else (* App-1 *)
+      match step t1 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t1') -> (OK, Sub(t1', t2))
   )
   (* Lt, Eq 的规则, 不能说相像, 只能说是一模一样. *)
   | Lt(t1, t2) -> (
-    raise Todo.Dynamics
+    let is_val_1 = value t1 in
+    let is_val_2 = value t2 in
+    if is_val_1 && is_val_2 then (* App-3 *)
+      match (t1, t2) with 
+      | (Int(t1'), Int(t2')) -> 
+          if (t1'<t2') then (OK, Bool(true)) else (OK, Bool(false)) 
+      | _ -> (Error, tm)
+    else if is_val_1 then (* App-2 *)
+      match step t2 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t2') -> (OK, Lt(t1, t2'))
+    else (* App-1 *)
+      match step t1 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t1') -> (OK, Lt(t1', t2))
   )
   | Eq(t1, t2) -> (
-    raise Todo.Dynamics
+    let is_val_1 = value t1 in
+    let is_val_2 = value t2 in
+    if is_val_1 && is_val_2 then (* App-3 *)
+      match (t1, t2) with 
+      | (Int(t1'), Int(t2')) -> 
+          if (t1' == t2') then (OK, Bool(true)) else (OK, Bool(false)) 
+      | _ -> (Error, tm)
+    else if is_val_1 then (* App-2 *)
+      match step t2 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t2') -> (OK, Eq(t1, t2'))
+    else (* App-1 *)
+      match step t1 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t1') -> (OK, Eq(t1', t2))
   )
 
   | If(t1, t2, t3) -> (
@@ -211,7 +323,26 @@ let rec step (tm:tm) : (status * tm) = match tm with
       -------------------------------- If-3
       if t1 then t2 else t3 end --> t3
      *)
-    raise Todo.Dynamics
+      let is_val_1 = value t1 in
+      if is_val_1 then (* App-2, App-3 *)
+        match t1 with 
+        | Bool(true) -> 
+          begin
+            match step t2 with
+            | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+            | (OK, t2') -> (OK, t2')
+          end
+        | Bool(false) -> 
+          begin
+            match step t3 with
+            | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+            | (OK, t3') -> (OK, t3');
+          end
+        | _ -> (Error, tm)
+      else           (* App-1 *)
+        match step t1 with
+        | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+        | (OK, t1') -> (OK, If(t1', t2, t3))
   )
   | Fix(bind, body) -> 
     (* 
