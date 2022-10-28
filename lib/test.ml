@@ -69,8 +69,8 @@ let main () = begin
     let open Syntax.Stringify in 
     let fmt = std_formatter in
     ( match response with
-    | Define(symbol, tm) -> fprintf fmt "定义: %s = @[%a@]@ " symbol pp_tm tm
-    | NotFound(name, tm) -> fprintf fmt "错误: @[%a@] 中自由变量 %s 未在环境中找到@ " pp_tm tm name
+    | Define(symbol, tm) -> fprintf fmt "定义: %s = @[%a@]@\n " symbol pp_tm tm
+    | NotFound(name, tm) -> fprintf fmt "错误: @[%a@] 中自由变量 %s 未在环境中找到@\n" pp_tm tm name
     | Evaluation(seq, status, tm) -> (
       match status with
       | Error -> fprintf fmt "错误: 出现运行时错误, 错误来源 @[%a@],"

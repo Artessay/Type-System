@@ -198,7 +198,7 @@ let rec step (tm:tm) : (status * tm) = match tm with
     let is_val_2 = value t2 in
     if is_val_1 && is_val_2 then (* App-3 *)
       match t1 with (* subst_bound b a = [b/0]a *)
-      | Lam(t1') -> (OK, subst_bound t2 t1') 
+      | Lam(t1') -> step (subst_bound t2 t1') (* (OK, subst_bound t2 t1') *) 
       | _ -> (Error, tm)
     else if is_val_1 then (* App-2 *)
       match step t2 with
