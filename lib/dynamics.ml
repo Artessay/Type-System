@@ -203,11 +203,11 @@ let rec step (tm:tm) : (status * tm) = match tm with
     else if is_val_1 then (* App-2 *)
       match step t2 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> (OK, App(t1, t2'))
+      | (OK, t2') -> step (App(t1, t2')) (* (OK, App(t1, t2')) *)
     else (* App-1 *)
       match step t1 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> (OK, App(t1', t2))
+      | (OK, t1') -> step (App(t1', t2)) (* (OK, App(t1', t2)) *)
   )
   | Add(t1, t2) -> ( (* 这里使用括号, 是因为出现了内层 match 嵌套 *)
     (* 
