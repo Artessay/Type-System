@@ -60,9 +60,26 @@ let example_src_seq : string list =
  *)
 let src_seq_1 : string list =
   [ {| if 2 + 3 < 5 then 0+1+2 else 8-2 end |}
+  ; {| if   5   < 5 then 0+1+2 else 8-2 end |}
+  ; {| if   false   then 0+1+2 else 8-2 end |}
+  ; {|                              8-2     |}
+  ; {|                               6      |}
   ]
 let src_seq_2 : string list = 
   [ {| (\ f. f (5 - 3))(\ x. if x < 0 then 0 - x else x + 2 end) |}
+  ; {| (\ x. if x < 0 then 0 - x else x + 2 end) (5 - 3) |}
+  ; {| (\ x. if x < 0 then 0 - x else x + 2 end) 2 |}
+  ; {| if 2 < 0 then 0 - 2 else 2 + 2 end |}
+  ; {| if false then 0 - 2 else 2 + 2 end |}
+  ; {| 2 + 2 |}
+  ; {|   4   |}
+  (* ; {| (\ x. if x < 0 then 0 - x else x + 2 end) (5 - 3) |}
+  ; {| if (5 - 3) < 0 then 0 - (5 - 3) else (5 - 3) + 2 end |}
+  ; {| if 2 < 0 then 0 - (5 - 3) else (5 - 3) + 2 end |}
+  ; {| if false then 0 - (5 - 3) else (5 - 3) + 2 end |}
+  ; {| (5 - 3) + 2 |}
+  ; {| 2 + 2 |}
+  ; {|   4   |} *)
   ]
 
 (* 
@@ -88,6 +105,8 @@ let example_src_seq_reason : string =
 let src_seq_fail : string list = 
   [ {| (\ f. f true)((\ x. if x then \y. y+1+1 else \y.y end)
     ((\ x. if x then false else true end)(3+1<2))) |}
+  ; {| (\ f. f true)((\ x. if x then \y. y+1+1 else \y.y end)
+  ((\ x. if x then false else true end)(3+1<2))) |}
   ]
 let src_seq_reason : string = {| Todo |}
 

@@ -2,8 +2,8 @@
 opam-version: "2.0"
 synopsis: "Write youself a simply typed lambda calculus and fix extension."
 description: "Implement simply typed lambda calculus and fix extension."
-maintainer: ["Your Name"]
-authors: ["PPL2022 Your Name"]
+maintainer: ["Rihong Qiu"]
+authors: ["PPL2022 Rihong Qiu"]
 license: "LICENSE"
 tags: ["ppl" "lab" "simply typed lambda calculus" "fix"]
 doc: "https://url/to/documentation"
