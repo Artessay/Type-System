@@ -156,7 +156,7 @@ let src_seq_fail : string list =
   ; {| (\y. y+1+1) true |}
   ; {| true + 1 + 1 |} *)
   ]
-let src_seq_reason : string = {| true + 1 + 1 |}
+let src_seq_reason : string = {| true + 1 |}
 
 (*
   接下来就是小步求值语义 t --> t', 这也是本文件最重要的内容(28 分).
@@ -233,11 +233,11 @@ let rec step (tm:tm) : (status * tm) = match tm with
     else if is_val_1 then (* App-2 *)
       match step t2 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> (OK, Add(t1, t2'))
+      | (OK, t2') -> step (Add(t1, t2'))
     else (* App-1 *)
       match step t1 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> (OK, Add(t1', t2))
+      | (OK, t1') -> step (Add(t1', t2))
   )
   | Sub(t1, t2) -> (
     (* 
@@ -265,11 +265,11 @@ let rec step (tm:tm) : (status * tm) = match tm with
     else if is_val_1 then (* App-2 *)
       match step t2 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> (OK, Sub(t1, t2'))
+      | (OK, t2') -> step (Sub(t1, t2'))
     else (* App-1 *)
       match step t1 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> (OK, Sub(t1', t2))
+      | (OK, t1') -> step (Sub(t1', t2))
   )
   (* Lt, Eq 的规则, 不能说相像, 只能说是一模一样. *)
   | Lt(t1, t2) -> (
@@ -283,11 +283,11 @@ let rec step (tm:tm) : (status * tm) = match tm with
     else if is_val_1 then (* App-2 *)
       match step t2 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> (OK, Lt(t1, t2'))
+      | (OK, t2') -> (step (Lt(t1, t2')))
     else (* App-1 *)
       match step t1 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> (OK, Lt(t1', t2))
+      | (OK, t1') -> (step (Lt(t1', t2)))
   )
   | Eq(t1, t2) -> (
     let is_val_1 = value t1 in
@@ -300,11 +300,11 @@ let rec step (tm:tm) : (status * tm) = match tm with
     else if is_val_1 then (* App-2 *)
       match step t2 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> (OK, Eq(t1, t2'))
+      | (OK, t2') -> (step (Eq(t1, t2')))
     else (* App-1 *)
       match step t1 with
       | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> (OK, Eq(t1', t2))
+      | (OK, t1') -> (step (Eq(t1', t2)))
   )
 
   | If(t1, t2, t3) -> (
@@ -342,7 +342,7 @@ let rec step (tm:tm) : (status * tm) = match tm with
       else           (* App-1 *)
         match step t1 with
         | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-        | (OK, t1') -> (OK, If(t1', t2, t3))
+        | (OK, t1') -> step (If(t1', t2, t3))
   )
   | Fix(bind, body) -> 
     (* 
