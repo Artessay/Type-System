@@ -198,6 +198,225 @@ let rec step (tm:tm) : (status * tm) = match tm with
     let is_val_2 = value t2 in
     if is_val_1 && is_val_2 then (* App-3 *)
       match t1 with (* subst_bound b a = [b/0]a *)
+      | Lam(t1') -> (OK, subst_bound t2 t1')
+      | _ -> (Error, tm)
+    else if is_val_1 then (* App-2 *)
+      match step t2 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t2') -> (OK, App(t1, t2'))
+    else (* App-1 *)
+      match step t1 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t1') -> (OK, App(t1', t2))
+  )
+  | Add(t1, t2) -> ( (* 这里使用括号, 是因为出现了内层 match 嵌套 *)
+    (* 
+      下面是 Add 的规则, 请你模仿 App 写出对应的实现:
+            t1    --> t1'
+      ---------------------- Add-1
+            t1+t2 --> t1'+t2
+
+      t1 val   t2 -->    t2'
+      ---------------------- Add-2
+            t1+t2 --> t1+t2'
+
+      t1 val t2 val t1=Int(n1) t2=Int(n2)
+      ------------------------------------ Add-3
+            t1+t2 --> Int(n1+n2)
+     *)
+    let is_val_1 = value t1 in
+    let is_val_2 = value t2 in
+    if is_val_1 && is_val_2 then (* App-3 *)
+      match (t1, t2) with 
+      | (Int(t1'), Int(t2')) -> (OK, Int(t1' + t2')) 
+      | _ -> (Error, tm)
+    else if is_val_1 then (* App-2 *)
+      match step t2 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t2') -> (OK, Add(t1, t2'))
+    else (* App-1 *)
+      match step t1 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t1') -> (OK, Add(t1', t2))
+  )
+  | Sub(t1, t2) -> (
+    (* 
+      减法与加法有类似的规则, 还记得 作业-学点 OCaml 吗？
+      请你模仿 Add 的规则写出 Sub 的规则, 并同样实现:
+
+            t1    --> t1'
+      ---------------------- Sub-1
+            t1-t2 --> t1'-t2
+
+      t1 val   t2 -->    t2'
+      ---------------------- Sub-2
+            t1+t2 --> t1-t2'
+
+      t1 val t2 val t1=Int(n1) t2=Int(n2)
+      ------------------------------------ Sub-3
+            t1-t2 --> Int(n1-n2)
+     *)
+    let is_val_1 = value t1 in
+    let is_val_2 = value t2 in
+    if is_val_1 && is_val_2 then (* App-3 *)
+      match (t1, t2) with 
+      | (Int(t1'), Int(t2')) -> (OK, Int(t1' - t2')) 
+      | _ -> (Error, tm)
+    else if is_val_1 then (* App-2 *)
+      match step t2 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t2') -> (OK, Sub(t1, t2'))
+    else (* App-1 *)
+      match step t1 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t1') -> (OK, Sub(t1', t2))
+  )
+  (* Lt, Eq 的规则, 不能说相像, 只能说是一模一样. *)
+  | Lt(t1, t2) -> (
+    let is_val_1 = value t1 in
+    let is_val_2 = value t2 in
+    if is_val_1 && is_val_2 then (* App-3 *)
+      match (t1, t2) with 
+      | (Int(t1'), Int(t2')) -> 
+          if (t1'<t2') then (OK, Bool(true)) else (OK, Bool(false)) 
+      | _ -> (Error, tm)
+    else if is_val_1 then (* App-2 *)
+      match step t2 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t2') -> (OK, Lt(t1, t2'))
+    else (* App-1 *)
+      match step t1 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t1') -> (OK, Lt(t1', t2))
+  )
+  | Eq(t1, t2) -> (
+    let is_val_1 = value t1 in
+    let is_val_2 = value t2 in
+    if is_val_1 && is_val_2 then (* App-3 *)
+      match (t1, t2) with 
+      | (Int(t1'), Int(t2')) -> 
+          if (t1' == t2') then (OK, Bool(true)) else (OK, Bool(false)) 
+      | _ -> (Error, tm)
+    else if is_val_1 then (* App-2 *)
+      match step t2 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t2') -> (OK, Eq(t1, t2'))
+    else (* App-1 *)
+      match step t1 with
+      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+      | (OK, t1') -> (OK, Eq(t1', t2))
+  )
+
+  | If(t1, t2, t3) -> (
+    (*
+      最后是 If 的规则, 这与之前的规则有较大差别, 请按照规则完成:
+         t1 --> t1'
+      -------------------------------- If-1
+      if t1 then t2 else t3 end
+        --> if t1' then t2 else t3 end
+
+         t1 val t1=Bool(true)
+      -------------------------------- If-2
+      if t1 then t2 else t3 end --> t2
+
+         t1 val t1=Bool(false)
+      -------------------------------- If-3
+      if t1 then t2 else t3 end --> t3
+     *)
+      let is_val_1 = value t1 in
+      if is_val_1 then (* App-2, App-3 *)
+        match t1 with 
+        | Bool(true) -> 
+          begin
+            match step t2 with
+            | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+            | (OK, t2') -> (OK, t2')
+          end
+        | Bool(false) -> 
+          begin
+            match step t3 with
+            | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+            | (OK, t3') -> (OK, t3');
+          end
+        | _ -> (Error, tm)
+      else           (* App-1 *)
+        match step t1 with
+        | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+        | (OK, t1') -> (
+          match t1' with
+          | Bool(true) -> 
+            begin
+              match step t2 with
+              | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+              | (OK, t2') -> (OK, If(t1', t2', t3))
+            end
+          | Bool(false) -> 
+            begin
+              match step t3 with
+              | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
+              | (OK, t3') -> (OK, If(t1', t2, t3'))
+            end
+          | _ -> (Error, tm)  (* (Error, t1') *)
+        )
+  )
+  | Fix(bind, body) -> 
+    (* 
+      这一分支是 fix 拓展部分, 请放到最后完成.
+      
+      --------------------------------------------------- Fix
+        fix bind = body --> [fix bind = body/bind] body
+
+     *)
+    raise Todo.Fixpoint
+
+
+(*
+  你可以在 `$ dune utop` 里试着使用 step, 例如:
+  `
+  let (stat, res) = {| (\x.3) (4+5) |} |> Parse.tm_nl |> Dynamics.step 
+  `
+ *)
+
+(*
+  消灭 Todo.Dynmaics 之后, 让我们把目光转移到动态语义出错上来.
+  形如 true + 3 --> 出错, 我们知道, 这是因为 true 与 3 不能做加法.
+  形如 true + 3 这样简单的项, 我们很容易肉眼检查出错误,
+  但当程序复杂之后, 就有可能在某个云深不知处藏了这样的错误, 
+  可能在某次程序执行, 这样不为人知的错误带来了严重的后果. 
+  事实上, 曾经 Bilibili 就出现一次服务器宕机事件, 原因正是这种深藏的错误.
+
+  为了能尽量减少运行时错误, 类型系统与类型检查孕育而生.
+  接下来你应前往 `type.ml` 去了解类型的抽象语法树结构,
+  以及前往 `statics.ml` 去解决静态语义问题.
+ *)
+
+
+ (* (eval) *)
+ (* let rec step (tm:tm) : (status * tm) = match tm with
+  | Var(_) -> (Error, tm) (* Var 出错, 我们总假定 tm 是 closed term *)
+  | Lam(_) | Int(_) | Bool(_) -> (OK, tm) (* value 不再发生变化 *)
+  | App(t1, t2) -> (
+    (* 
+      下面是 App 的动态语义规则及其对应的实现,
+      值得一提的是, 这种 App 的运算顺序与 lab-1 中的 normalization 不同
+      如下运算顺序被称为 applicative order, 或说 eager evaluation
+      而 lab-1 中的称为 normal order, 某种程度上是 lazy evaluation
+          t1    --> t1'
+      ------------------------ App-1
+          t1 t2 --> t1' t2
+
+      t1 val t2 -->    t2'
+      ------------------------ App-2
+          t1 t2 --> t1 t2'
+
+      t1 val t2 val  t1=\x.t1'
+      ------------------------ App-3
+          t1 t2 --> [t2/x]t1'
+     *)
+    let is_val_1 = value t1 in
+    let is_val_2 = value t2 in
+    if is_val_1 && is_val_2 then (* App-3 *)
+      match t1 with (* subst_bound b a = [b/0]a *)
       | Lam(t1') -> step (subst_bound t2 t1') (* (OK, subst_bound t2 t1') *) 
       | _ -> (Error, tm)
     else if is_val_1 then (* App-2 *)
@@ -352,25 +571,4 @@ let rec step (tm:tm) : (status * tm) = match tm with
         fix bind = body --> [fix bind = body/bind] body
 
      *)
-    raise Todo.Fixpoint
-
-
-(*
-  你可以在 `$ dune utop` 里试着使用 step, 例如:
-  `
-  let (stat, res) = {| (\x.3) (4+5) |} |> Parse.tm_nl |> Dynamics.step 
-  `
- *)
-
-(*
-  消灭 Todo.Dynmaics 之后, 让我们把目光转移到动态语义出错上来.
-  形如 true + 3 --> 出错, 我们知道, 这是因为 true 与 3 不能做加法.
-  形如 true + 3 这样简单的项, 我们很容易肉眼检查出错误,
-  但当程序复杂之后, 就有可能在某个云深不知处藏了这样的错误, 
-  可能在某次程序执行, 这样不为人知的错误带来了严重的后果. 
-  事实上, 曾经 Bilibili 就出现一次服务器宕机事件, 原因正是这种深藏的错误.
-
-  为了能尽量减少运行时错误, 类型系统与类型检查孕育而生.
-  接下来你应前往 `type.ml` 去了解类型的抽象语法树结构,
-  以及前往 `statics.ml` 去解决静态语义问题.
- *)
+    raise Todo.Fixpoint *)

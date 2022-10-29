@@ -35,7 +35,7 @@ let rec (=) ty1 ty2 : bool =
   根据下列字符串, 写出对应的抽象语法树(2 分):
   "Int->(Bool->Int)->(Bool->Bool)"
  *)
-let ty_ast_src : ty = Bool (* Todo *)
+let ty_ast_src : ty = Lam (Int, Lam(Lam(Bool, Int), Lam(Bool, Bool)))
 
 (*
   还记得在 `term.ml` 里出现过的 OptionTyped.erase 和 OptionTyped.inject 吗?
