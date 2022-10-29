@@ -278,7 +278,7 @@ let rec step (tm:tm) : (status * tm) = match tm with
     if is_val_1 && is_val_2 then (* App-3 *)
       match (t1, t2) with 
       | (Int(t1'), Int(t2')) -> 
-          if (t1'<t2') then (OK, Bool(true)) else (OK, Bool(false)) 
+          if (t1' < t2') then (OK, Bool(true)) else (OK, Bool(false)) 
       | _ -> (Error, tm)
     else if is_val_1 then (* App-2 *)
       match step t2 with
@@ -326,38 +326,13 @@ let rec step (tm:tm) : (status * tm) = match tm with
       let is_val_1 = value t1 in
       if is_val_1 then (* App-2, App-3 *)
         match t1 with 
-        | Bool(true) -> 
-          begin
-            match step t2 with
-            | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-            | (OK, t2') -> (OK, t2')
-          end
-        | Bool(false) -> 
-          begin
-            match step t3 with
-            | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-            | (OK, t3') -> (OK, t3');
-          end
+        | Bool(true)  -> (OK, t2)
+        | Bool(false) -> (OK, t3)
         | _ -> (Error, tm)
       else           (* App-1 *)
         match step t1 with
         | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-        | (OK, t1') -> (
-          match t1' with
-          | Bool(true) -> 
-            begin
-              match step t2 with
-              | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-              | (OK, t2') -> (OK, If(t1', t2', t3))
-            end
-          | Bool(false) -> 
-            begin
-              match step t3 with
-              | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-              | (OK, t3') -> (OK, If(t1', t2, t3'))
-            end
-          | _ -> (Error, tm)  (* (Error, t1') *)
-        )
+        | (OK, t1') -> (OK, If(t1', t2, t3))
   )
   | Fix(bind, body) -> 
     (* 
