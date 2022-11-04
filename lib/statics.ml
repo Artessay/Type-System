@@ -30,11 +30,11 @@ let example_ty_result_2 : ty option = Some(Int) (* 1 和 0 是 Int, 从而整个
 (* 参考例子, 请你判断下列三项有无正确的类型(各 2 分): *)
 
 let tm_check_1 : string = "if 2 + 1 = 3 then (\\ x:Bool.3) (2<3) else 9-1 end"
-let ty_result_1 : ty option = Some(Bool) (* Todo *)
+let ty_result_1 : ty option = Some(Int) 
 let tm_check_2 : string = "(\\ x : Int. x + 4)(true - false)"
-let ty_result_2 : ty option = Some(Bool) (* Todo *)
+let ty_result_2 : ty option = None
 let tm_check_3 : string = "\\ b : Bool. if b then 2 else 1 + b end"
-let ty_result_3 : ty option = Some(Bool) (* Todo *)
+let ty_result_3 : ty option = None
 
 
 (*
@@ -58,7 +58,7 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       -------------------- Ty-Bool
       Γ ⊢ Bool(n) : Bool
      *)
-    raise Todo.Statics
+    Some Bool
   )
   
   | Term.Add(t1, t2) -> (
@@ -69,17 +69,22 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ----------------------------- Ty-Add
            Γ ⊢ t1 + t2 : Int
      *)
-    raise Todo.Statics
+    match (t1, t2) with
+    | (Int(t1'), Int(t2'))  -> Some Int
+    | _                     -> None
   )
     
   | Term.Sub(t1, t2) -> (
     (*
       请先补充类型规则, 再根据类型规则补全此分支的代码
 
+       Γ ⊢ t1 : Int  Γ ⊢ t2 : Int
       ------------------------------------------ Ty-Sub
-
+           Γ ⊢ t1 - t2 : Int
      *)
-    raise Todo.Statics
+    match (t1, t2) with
+    | (Int(t1'), Int(t2'))  -> Some Int
+    | _                     -> None
   )
   | Term.Lt(t1, t2) -> (
     (*
@@ -88,7 +93,9 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ------------------------------------------ Ty-Lt
 
      *)
-    raise Todo.Statics
+    match (t1, t2) with
+    | (Int(t1'), Int(t2'))  -> Some Bool
+    | _                     -> None
   )
   | Term.Eq(t1, t2) -> (
     (*
@@ -97,7 +104,9 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ------------------------------------------ Ty-Eq
 
      *)
-    raise Todo.Statics
+    match (t1, t2) with
+    | (Int(t1'), Int(t2'))  -> Some Bool
+    | _                     -> None
   )
   | Term.If(t1, t2, t3) -> (
     (*
@@ -106,14 +115,18 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ----------------------------------------------------- Ty-If
          Γ ⊢ if t1 then t2 else t3 end : ty2
      *)
-    raise Todo.Statics
+    let ty_option_2 = check ctx t2 in
+    let ty_option_3 = check ctx t3 in
+    match (t1, ty_option_2, ty_option_3) with
+    | (Bool(n), Some(ty2), Some(ty3)) -> if Type.(ty2=ty3) then Some(ty2) else None
+    | _       -> None
   )
   | Term.Var(x) -> 
     (*
       根据规则写出实现: 
       ( 提示:你需要使用 Map 相关方法, 你应在 lab-1 中足够熟悉, 亦可参考
         https://ocaml.org/p/base/v0.15.0/doc/Base/Map/index.html )
-
+      
       -------------- Ty-Var
        Γ, x:T ⊢ x:T
 
