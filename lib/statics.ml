@@ -69,8 +69,14 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ----------------------------- Ty-Add
            Γ ⊢ t1 + t2 : Int
      *)
-    match (t1, t2) with
-    | (Int(t1'), Int(t2'))  -> Some Int
+    let ty_option_1 = check ctx t1 in
+    let ty_option_2 = check ctx t2 in
+    match (ty_option_1, ty_option_2) with
+    | (Some(ty1), Some(ty2))  -> (
+      match (ty1, ty2) with
+      | (Int, Int)  -> Some(Int)
+      | _           -> None
+    )
     | _                     -> None
   )
     
@@ -82,8 +88,14 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ------------------------------------------ Ty-Sub
            Γ ⊢ t1 - t2 : Int
      *)
-    match (t1, t2) with
-    | (Int(t1'), Int(t2'))  -> Some Int
+    let ty_option_1 = check ctx t1 in
+    let ty_option_2 = check ctx t2 in
+    match (ty_option_1, ty_option_2) with
+    | (Some(ty1), Some(ty2))  -> (
+      match (ty1, ty2) with
+      | (Int, Int)  -> Some(Int)
+      | _           -> None
+    )
     | _                     -> None
   )
   | Term.Lt(t1, t2) -> (
@@ -93,8 +105,14 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ------------------------------------------ Ty-Lt
 
      *)
-    match (t1, t2) with
-    | (Int(t1'), Int(t2'))  -> Some Bool
+    let ty_option_1 = check ctx t1 in
+    let ty_option_2 = check ctx t2 in
+    match (ty_option_1, ty_option_2) with
+    | (Some(ty1), Some(ty2))  -> (
+      match (ty1, ty2) with
+      | (Int, Int)  -> Some(Bool)
+      | _           -> None
+    )
     | _                     -> None
   )
   | Term.Eq(t1, t2) -> (
@@ -104,8 +122,14 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ------------------------------------------ Ty-Eq
 
      *)
-    match (t1, t2) with
-    | (Int(t1'), Int(t2'))  -> Some Bool
+    let ty_option_1 = check ctx t1 in
+    let ty_option_2 = check ctx t2 in
+    match (ty_option_1, ty_option_2) with
+    | (Some(ty1), Some(ty2))  -> (
+      match (ty1, ty2) with
+      | (Int, Int)  -> Some(Bool)
+      | _           -> None
+    )
     | _                     -> None
   )
   | Term.If(t1, t2, t3) -> (
@@ -115,10 +139,12 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ----------------------------------------------------- Ty-If
          Γ ⊢ if t1 then t2 else t3 end : ty2
      *)
+    let ty_option_1 = check ctx t1 in
     let ty_option_2 = check ctx t2 in
     let ty_option_3 = check ctx t3 in
-    match (t1, ty_option_2, ty_option_3) with
-    | (Bool(n), Some(ty2), Some(ty3)) -> if Type.(ty2=ty3) then Some(ty2) else None
+    match (ty_option_1, ty_option_2, ty_option_3) with
+    | (Some(ty1), Some(ty2), Some(ty3)) -> 
+      if (Type.(ty1=Bool) && Type.(ty2=ty3)) then Some(ty2) else None
     | _       -> None
   )
   | Term.Var(x) -> (
