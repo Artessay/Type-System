@@ -121,12 +121,12 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
     | (Bool(n), Some(ty2), Some(ty3)) -> if Type.(ty2=ty3) then Some(ty2) else None
     | _       -> None
   )
-  | Term.Var(x) -> 
+  | Term.Var(x) -> (
     (*
       根据规则写出实现: 
       ( 提示:你需要使用 Map 相关方法, 你应在 lab-1 中足够熟悉, 亦可参考
         https://ocaml.org/p/base/v0.15.0/doc/Base/Map/index.html )
-      
+
       -------------- Ty-Var
        Γ, x:T ⊢ x:T
 
@@ -137,7 +137,10 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
         Γ ⊢ x : T
 
      *)
-    raise Todo.Statics
+    match Map.find ctx x with
+    | Some ty_x ->  Some(ty_x)
+    | None      ->  None
+  )
   | Term.Lam(x, ty1, tm) -> (
     (*
       根据规则写出实现: 
@@ -145,7 +148,15 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ------------------------------ Ty-Lam
        Γ ⊢ (λx:ty1.tm) : ty1 -> ty2
      *)
-    raise Todo.Statics
+    let ctx = 
+      Map.set ctx ~key:x ~data:ty1
+    in
+    let ty_option_m = 
+      check ctx tm 
+    in
+    match ty_option_m with
+    | Some(tym) ->  Some(Lam(ty1, tym))
+    | None      ->  None
   )
   | Term.App(t1, t2) -> (
     (*
@@ -154,7 +165,12 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
       ------------------------------------------ Ty-App
        Γ ⊢ t1 t2 : ty2
      *)
-    raise Todo.Statics
+    let ty_option_1 = check ctx t1 in
+    let ty_option_2 = check ctx t2 in
+    match (ty_option_1, ty_option_2) with
+    | (Some(Lam(ty1, ty2)), Some(ty1')) ->
+      if Type.(ty1=ty1') then Some(ty2) else None
+    | _   -> None
   )
   | Term.Fix(bind, ty, body) -> (
     (*
