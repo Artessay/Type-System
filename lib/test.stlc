@@ -1,14 +1,7 @@
-let x = if true then 1 else false end
-check x
+let sum_aux = \ aux. \ n. if n = 0 then n else n + (aux aux (n-1)) end
 
-let x = if true then 1 else 0 end
-check x Int
+let sum = sum_aux sum_aux
 
-let tm_check_1 = if 2 + 1 = 3 then (\ x:Bool.3) (2<3) else 9-1 end
-check tm_check_1 Int
+let fib_aux = \ aux. \ n. if n < 2 then 1 else (aux (n-2)) + (aux (n-1)) end
 
-let tm_check_2 = (\ x : Int. x + 4)(true - false)
-check tm_check_2
-
-let tm_check_3 = \ b : Bool. if b then 2 else 1 + b end
-check tm_check_3
+let fib = fib_aux fib_aux

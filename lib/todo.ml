@@ -36,7 +36,7 @@ let sum_aux : string = {| \ aux. \ n.  if n = 0 then n else n + (aux (n-1)) end 
   你仍然只需要给出辅助函数 fib_aux, 你可以使用 ` dune test ` 进行测试.
  *)
 
-let fib_aux : string = {| Todo |}
+let fib_aux : string = {| \ aux. \ n.  if n < 2 then 1 else (aux (n-2)) + (aux (n-1)) end |}
 
 (*
   不过, Z 组合子在 STLC 里是不可类型化的, 即 Z 组合子没有一个合适的类型.
@@ -74,7 +74,10 @@ let sum_fix : string =
 (* 基于 fix 拓展的 fibonacci (2 分)
   请同样写出 fibonacci 函数的 fix 版本, 并约定 fib 0 = fib 1 = 1.
  *)
-let fib_fix : string = {| Todo |}
+let fib_fix : string = 
+  {|  fix fib : Int->Int = \ n : Int .
+      if n < 2 then 1 else (fib (n-2)) + (fib (n-1)) end
+  |}
 
 (*
   下面是 Fix 的语义部分, 你需要根据这些规则消灭 Todo.Fixpoint (10 分)
