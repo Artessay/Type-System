@@ -207,7 +207,16 @@ let rec check (ctx:ctx) (tm:tm) : ty option =
        Γ ⊢ (fix bind : ty = body) : ty
       
      *)
-    raise Todo.Fixpoint
+    let ctx = 
+      Map.set ctx ~key:bind ~data:ty
+    in
+    let ty_option_body =
+      check ctx body
+    in
+    match ty_option_body with
+    | Some(ty)  -> Some(ty)
+    | _         -> None
+    (* raise Todo.Fixpoint *)
   )
   
 (*

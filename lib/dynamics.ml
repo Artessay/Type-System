@@ -334,7 +334,7 @@ let rec step (tm:tm) : (status * tm) = match tm with
         | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
         | (OK, t1') -> (OK, If(t1', t2, t3))
   )
-  | Fix(bind, body) -> 
+  | Fix(bind, body) -> (
     (* 
       这一分支是 fix 拓展部分, 请放到最后完成.
       
@@ -342,7 +342,9 @@ let rec step (tm:tm) : (status * tm) = match tm with
         fix bind = body --> [fix bind = body/bind] body
 
      *)
-    raise Todo.Fixpoint
+    (OK, (subst_bound (Fix(bind, body)) body ) )
+     (* raise Todo.Fixpoint *)
+  )
 
 
 (*
@@ -367,183 +369,3 @@ let rec step (tm:tm) : (status * tm) = match tm with
 
 
  (* (eval) *)
- (* let rec step (tm:tm) : (status * tm) = match tm with
-  | Var(_) -> (Error, tm) (* Var 出错, 我们总假定 tm 是 closed term *)
-  | Lam(_) | Int(_) | Bool(_) -> (OK, tm) (* value 不再发生变化 *)
-  | App(t1, t2) -> (
-    (* 
-      下面是 App 的动态语义规则及其对应的实现,
-      值得一提的是, 这种 App 的运算顺序与 lab-1 中的 normalization 不同
-      如下运算顺序被称为 applicative order, 或说 eager evaluation
-      而 lab-1 中的称为 normal order, 某种程度上是 lazy evaluation
-          t1    --> t1'
-      ------------------------ App-1
-          t1 t2 --> t1' t2
-
-      t1 val t2 -->    t2'
-      ------------------------ App-2
-          t1 t2 --> t1 t2'
-
-      t1 val t2 val  t1=\x.t1'
-      ------------------------ App-3
-          t1 t2 --> [t2/x]t1'
-     *)
-    let is_val_1 = value t1 in
-    let is_val_2 = value t2 in
-    if is_val_1 && is_val_2 then (* App-3 *)
-      match t1 with (* subst_bound b a = [b/0]a *)
-      | Lam(t1') -> step (subst_bound t2 t1') (* (OK, subst_bound t2 t1') *) 
-      | _ -> (Error, tm)
-    else if is_val_1 then (* App-2 *)
-      match step t2 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> step (App(t1, t2')) (* (OK, App(t1, t2')) *)
-    else (* App-1 *)
-      match step t1 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> step (App(t1', t2)) (* (OK, App(t1', t2)) *)
-  )
-  | Add(t1, t2) -> ( (* 这里使用括号, 是因为出现了内层 match 嵌套 *)
-    (* 
-      下面是 Add 的规则, 请你模仿 App 写出对应的实现:
-            t1    --> t1'
-      ---------------------- Add-1
-            t1+t2 --> t1'+t2
-
-      t1 val   t2 -->    t2'
-      ---------------------- Add-2
-            t1+t2 --> t1+t2'
-
-      t1 val t2 val t1=Int(n1) t2=Int(n2)
-      ------------------------------------ Add-3
-            t1+t2 --> Int(n1+n2)
-     *)
-    let is_val_1 = value t1 in
-    let is_val_2 = value t2 in
-    if is_val_1 && is_val_2 then (* App-3 *)
-      match (t1, t2) with 
-      | (Int(t1'), Int(t2')) -> (OK, Int(t1' + t2')) 
-      | _ -> (Error, tm)
-    else if is_val_1 then (* App-2 *)
-      match step t2 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> step (Add(t1, t2'))
-    else (* App-1 *)
-      match step t1 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> step (Add(t1', t2))
-  )
-  | Sub(t1, t2) -> (
-    (* 
-      减法与加法有类似的规则, 还记得 作业-学点 OCaml 吗？
-      请你模仿 Add 的规则写出 Sub 的规则, 并同样实现:
-
-            t1    --> t1'
-      ---------------------- Sub-1
-            t1-t2 --> t1'-t2
-
-      t1 val   t2 -->    t2'
-      ---------------------- Sub-2
-            t1+t2 --> t1-t2'
-
-      t1 val t2 val t1=Int(n1) t2=Int(n2)
-      ------------------------------------ Sub-3
-            t1-t2 --> Int(n1-n2)
-     *)
-    let is_val_1 = value t1 in
-    let is_val_2 = value t2 in
-    if is_val_1 && is_val_2 then (* App-3 *)
-      match (t1, t2) with 
-      | (Int(t1'), Int(t2')) -> (OK, Int(t1' - t2')) 
-      | _ -> (Error, tm)
-    else if is_val_1 then (* App-2 *)
-      match step t2 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> step (Sub(t1, t2'))
-    else (* App-1 *)
-      match step t1 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> step (Sub(t1', t2))
-  )
-  (* Lt, Eq 的规则, 不能说相像, 只能说是一模一样. *)
-  | Lt(t1, t2) -> (
-    let is_val_1 = value t1 in
-    let is_val_2 = value t2 in
-    if is_val_1 && is_val_2 then (* App-3 *)
-      match (t1, t2) with 
-      | (Int(t1'), Int(t2')) -> 
-          if (t1'<t2') then (OK, Bool(true)) else (OK, Bool(false)) 
-      | _ -> (Error, tm)
-    else if is_val_1 then (* App-2 *)
-      match step t2 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> (step (Lt(t1, t2')))
-    else (* App-1 *)
-      match step t1 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> (step (Lt(t1', t2)))
-  )
-  | Eq(t1, t2) -> (
-    let is_val_1 = value t1 in
-    let is_val_2 = value t2 in
-    if is_val_1 && is_val_2 then (* App-3 *)
-      match (t1, t2) with 
-      | (Int(t1'), Int(t2')) -> 
-          if (t1' == t2') then (OK, Bool(true)) else (OK, Bool(false)) 
-      | _ -> (Error, tm)
-    else if is_val_1 then (* App-2 *)
-      match step t2 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t2') -> (step (Eq(t1, t2')))
-    else (* App-1 *)
-      match step t1 with
-      | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-      | (OK, t1') -> (step (Eq(t1', t2)))
-  )
-
-  | If(t1, t2, t3) -> (
-    (*
-      最后是 If 的规则, 这与之前的规则有较大差别, 请按照规则完成:
-         t1 --> t1'
-      -------------------------------- If-1
-      if t1 then t2 else t3 end
-        --> if t1' then t2 else t3 end
-
-         t1 val t1=Bool(true)
-      -------------------------------- If-2
-      if t1 then t2 else t3 end --> t2
-
-         t1 val t1=Bool(false)
-      -------------------------------- If-3
-      if t1 then t2 else t3 end --> t3
-     *)
-      let is_val_1 = value t1 in
-      if is_val_1 then (* App-2, App-3 *)
-        match t1 with 
-        | Bool(true) -> 
-          begin
-            match step t2 with
-            | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-            | (OK, t2') -> (OK, t2')
-          end
-        | Bool(false) -> 
-          begin
-            match step t3 with
-            | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-            | (OK, t3') -> (OK, t3');
-          end
-        | _ -> (Error, tm)
-      else           (* App-1 *)
-        match step t1 with
-        | (Error, tm) -> (Error, tm) (* 小步求值出错, "短路"将错误传递出去 *)
-        | (OK, t1') -> step (If(t1', t2, t3))
-  )
-  | Fix(bind, body) -> 
-    (* 
-      这一分支是 fix 拓展部分, 请放到最后完成.
-      
-      --------------------------------------------------- Fix
-        fix bind = body --> [fix bind = body/bind] body
-
-     *)
-    raise Todo.Fixpoint *)

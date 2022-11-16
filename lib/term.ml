@@ -160,7 +160,7 @@ module Nameless = struct
   (* subst_free b x a = [b/x]a *)
   let subst_free (b:tm) (x:string) (a:tm) : tm =
     let rec aux (b:tm) (x:string) (a:tm) = begin
-      let reaux = aux b x in 
+      let reaux = aux b x in (* substitue x with b in term a *)
       match a with 
       | Var(Free(name)) -> if String.(x=name) then b else a
       | Var(_) | Int(_) | Bool(_) -> a
@@ -171,7 +171,7 @@ module Nameless = struct
       | Eq(tm1, tm2) -> Eq(reaux tm1, reaux tm2)
       | Lt(tm1, tm2) -> Lt(reaux tm1, reaux tm2)
       | If(tm1, tm2, tm3) -> If(reaux tm1, reaux tm2, reaux tm3)
-      | Fix(bind, body) -> raise Todo.Fixpoint
+      | Fix(bind, body) -> Fix(bind, reaux body)  (* Fix *)
     end in aux b x a
 
   (* subst_bound b a = [b/0]a *)
@@ -188,7 +188,7 @@ module Nameless = struct
       | Eq(tm1, tm2) -> Eq(reaux tm1, reaux tm2)
       | Lt(tm1, tm2) -> Lt(reaux tm1, reaux tm2)
       | If(tm1, tm2, tm3) -> If(reaux tm1, reaux tm2, reaux tm3)
-      | Fix(bind, body) -> raise Todo.Fixpoint
+      | Fix(bind, body) -> Fix(bind, reaux body) (* Fix *)
     end in aux b 0 a 
 end
 
@@ -219,7 +219,7 @@ let drop_name (tm : Named.tm) : Nameless.tm =
     | Named.If(tm1, tm2, tm3) ->
       Nameless.If(reaux tm1, reaux tm2, reaux tm3)
     | Named.Fix(bind, body) -> 
-      raise Todo.Fixpoint
+      Nameless.Fix(bind, reaux body)
   end in aux 0 (Map.empty (module String)) tm
 
 
@@ -253,7 +253,8 @@ let give_name (tm : Nameless.tm) : Named.tm =
       Named.Eq(reaux tm1, reaux tm2)
     | Nameless.If(tm1, tm2, tm3) ->
       Named.If(reaux tm1, reaux tm2, reaux tm3)
-    | Nameless.Fix(bind, body) -> raise Todo.Fixpoint
+    | Nameless.Fix(bind, body) -> 
+      Named.Fix(bind, reaux body) (* forbid bind ? *)
   end in aux gen 0 (Map.empty (module Int)) tm
 
 

@@ -4,7 +4,7 @@ exception Statics
   请确保你阅读过 dynamics 与 statics 部分才往下阅读.
  *)
 
-exception Fixpoint
+(* exception Fixpoint *)
 
 (* 拓展 : fix 
   温馨提示: 像先前的内容一样, 先是简单的练习, 然后才是实现语义.
