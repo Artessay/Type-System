@@ -342,7 +342,7 @@ let rec step (tm:tm) : (status * tm) = match tm with
         fix bind = body --> [fix bind = body/bind] body
 
      *)
-    (OK, (subst_bound (Fix(bind, body)) body ) )
+    (OK, (subst_bound body (Fix(bind, body))) )
      (* raise Todo.Fixpoint *)
   )
 

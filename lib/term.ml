@@ -188,7 +188,7 @@ module Nameless = struct
       | Eq(tm1, tm2) -> Eq(reaux tm1, reaux tm2)
       | Lt(tm1, tm2) -> Lt(reaux tm1, reaux tm2)
       | If(tm1, tm2, tm3) -> If(reaux tm1, reaux tm2, reaux tm3)
-      | Fix(bind, body) -> Fix(bind, reaux body) (* Fix *)
+      | Fix(bind, body) -> (subst_free (Fix(bind, body)) bind body)  (* Fix *)
     end in aux b 0 a 
 end
 
@@ -219,7 +219,8 @@ let drop_name (tm : Named.tm) : Nameless.tm =
     | Named.If(tm1, tm2, tm3) ->
       Nameless.If(reaux tm1, reaux tm2, reaux tm3)
     | Named.Fix(bind, body) -> 
-      Nameless.Fix(bind, reaux body)
+      let map = (Map.remove map bind) in
+      Nameless.Fix(bind, (aux dep map body))
   end in aux 0 (Map.empty (module String)) tm
 
 
